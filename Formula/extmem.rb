@@ -1,17 +1,17 @@
 class Extmem < Formula
   desc "Local external memory service with semantic search"
   homepage "https://github.com/ut0s/homebrew-extmem"
-  url "https://github.com/ut0s/homebrew-extmem/releases/download/v0.1.2/extmem-v0.1.2.tar.gz"
-  version "0.1.2"
-  sha256 "4362bd375ec84235589d83c8d00b79ccf10afc9b066e3b4e3fb2471379063679"
+  url "https://github.com/ut0s/homebrew-extmem/releases/download/v0.1.3/extmem-v0.1.3.tar.gz"
+  version "0.1.3"
+  sha256 "56c785e43b31a3908282814876f3e7a3079d8ff0f8dc6b682254e824dd2e8bc3"
   license :cannot_represent
 
-  depends_on "node@22"
+  depends_on "node"
   depends_on "pnpm" => :build
   depends_on "python@3.13" => :build
 
   def install
-    ENV.prepend_path "PATH", Formula["node@22"].opt_bin
+    ENV.prepend_path "PATH", Formula["node"].opt_bin
     ENV["npm_config_python"] = (Formula["python@3.13"].opt_bin/"python3.13").to_s
     system Formula["pnpm"].opt_bin/"pnpm", "install", "--prod", "--frozen-lockfile"
 
@@ -19,7 +19,7 @@ class Extmem < Formula
     chmod 0555, libexec/"dist/cli.js"
     (bin/"extmem").write <<~SH
       #!/bin/sh
-      exec "#{Formula["node@22"].opt_bin}/node" "#{opt_libexec}/dist/cli.js" "$@"
+      exec "#{Formula["node"].opt_bin}/node" "#{opt_libexec}/dist/cli.js" "$@"
     SH
     chmod 0555, bin/"extmem"
   end
@@ -62,12 +62,10 @@ class Extmem < Formula
     begin
       response = nil
       30.times do
-        begin
-          response = shell_output("curl -sS http://127.0.0.1:#{port}/api/memos")
-          break if response.include?("[")
-        rescue RuntimeError
-          sleep 0.2
-        end
+        response = shell_output("curl -sf --max-time 1 http://127.0.0.1:#{port}/api/memos || true")
+        break if response.include?("[")
+
+        sleep 0.2
       end
       assert_match "[", response
     ensure
